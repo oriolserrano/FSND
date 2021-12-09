@@ -1,5 +1,6 @@
 from datetime import datetime
-
+from models import Show
+from sqlalchemy import case
 #----------------------------------------------------------------------------#
 # Helper Functions.
 #----------------------------------------------------------------------------#
@@ -35,3 +36,14 @@ def concat_genre(input_form):
     '''
     genre_casted = ', '.join(dict(input_form.lists())['genres'])
     return genre_casted
+
+def get_case_upfront():
+  '''
+  This case method is used several times to cound the number of show that are upfront, this way we can rehuse it
+  '''
+  return case(
+    [
+        (Show.start_time>datetime.now(), 1)  
+    ],
+    else_=0
+  ) 
