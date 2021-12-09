@@ -172,34 +172,33 @@ def create_venue_submission():
   # [x] TODO: insert form data as a new Venue record in the db, instead
   # [x] TODO: modify data to be the data object returned from db insertion
   try:
-    input = request.form
-    venue_name = input['name']
-    venue_city = input['city']
-    venue_state = input['state']
-    venue_address = input['address']
-    venue_phone = input['phone']
-    venue_image_link = input['image_link']
-    #In case that multiples genres are chosed, the same key appears multiple time, to concat them to string this method is needed
-    venue_genres = concat_genre(input)
-    venue_facebook_link = input['facebook_link']
-    venue_website_link = input['website_link']
-    venue_seeking_talent = get_boolean_value_dict(input,'seeking_talent')
-    
-    venue_seeking_description = input['seeking_description']
-    venue = Venue(name=venue_name, city=venue_city, state=venue_state, address=venue_address,
-                phone=venue_phone, image_link=venue_image_link, facebook_link=venue_facebook_link,
-                genres=venue_genres, seeking_talent=venue_seeking_talent, seeking_description=venue_seeking_description, website=venue_website_link)
+    form = VenueForm(request.form)
+    print(form.genres.data)
+    venue = Venue(
+      name = form.name.data,
+      city = form.city.data,
+      state = form.state.data,
+      address = form.address.data,
+      phone = form.phone.data,
+      image_link = form.image_link.data,
+      #In case that there are multiple genres, it is a list and needs to be concated
+      genres= concat_genres(form.genres.data),
+      facebook_link = form.facebook_link.data,
+      website = form.website_link.data,
+      seeking_talent = form.seeking_talent.data,
+      seeking_description = form.seeking_description.data
+    )
     session.add(venue)
     #commit the session in the DB
     session.commit() 
     # on successful db insert, flash success
-    flash('Venue ' + input['name'] + ' was successfully listed!')
+    flash('Venue ' + venue.name + ' was successfully listed!')
   except:
     session.rollback()
     # [x] TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    flash('An error occurred. Venue {} could not be listed.'.format(input['name']))
+    flash('An error occurred. Venue {} could not be listed.'.format(request.form['name']))
   finally:
     session.close()  
   return render_template('pages/home.html')
@@ -329,20 +328,13 @@ def edit_artist_submission(artist_id):
   # [x] TODO: take values from the form submitted, and update existing
   # artist record with ID <artist_id> using the new attributes
   try:
-    input = request.form
+    form = ArtistForm(request.form)
+    #In case that there are multiple genres, it is a list and needs to be concated
+    form.genres.data = concat_genres(form.genres.data)
     artist = session.query(Artist).get(artist_id)
-    artist.name=input['name']
-    artist.city=input['city']
-    artist.state=input['state']
-    artist.phone=input['phone']
-    artist.image_link=input['image_link']
-    artist.facebook_link=input['facebook_link']
-    artist.website=input['website_link']
-    artist.seeking_description=input['seeking_description']
-    #In case that multiples genres are chosed, the same key appears multiple time, to concat them to string this is needed
-    artist.genres = concat_genre(input)
-    artist.seeking_venue = get_boolean_value_dict(input, 'seeking_venue')
-    
+    #Populate the values of the form to the Artist obj
+    form.populate_obj(artist)
+    form.validate()
     session.commit()
   except:
     flash('An error occurred. Artist ' + request.form['name'] + ' could not be edited.')
@@ -376,20 +368,13 @@ def edit_venue_submission(venue_id):
   # [x] TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
   try:
-    input = request.form
+    form = VenueForm(request.form)
+    #In case that there are multiple genres, it is a list and needs to be concated
+    form.genres.data = concat_genres(form.genres.data)
     venue = session.query(Venue).get(venue_id)
-    venue.name = input['name']
-    venue.city = input['city']
-    venue.state = input['state']
-    venue.address = input['address']
-    venue.phone = input['phone']
-    venue.image_link = input['image_link']
-    #In case that multiples genres are chosed, the same key appears multiple time, to concat them to string this is needed
-    venue.genres = concat_genre(input)
-    venue.facebook_link = input['facebook_link']
-    venue.website_link = input['website_link']
-    venue.seeking_talent = get_boolean_value_dict(input,'seeking_talent')
-    venue.seeking_description = input['seeking_description']
+    #Populate the values of the form to the Venue obj
+    form.populate_obj(venue)
+    form.validate()
     session.commit()
   except:
     flash('An error occurred. Venue ' + request.form['name'] + ' could not be edited.')
@@ -412,22 +397,20 @@ def create_artist_submission():
   # [x] TODO: modify data to be the data object returned from db insertion
   # on successful db insert, flash success
   try:
-    input = request.form
-    artist_name=input['name']
-    artist_city=input['city']
-    artist_state=input['state']
-    artist_phone=input['phone']
-    artist_image_link=input['image_link']
-    artist_facebook_link=input['facebook_link']
-    artist_website=input['website_link']
-    artist_seeking_description=input['seeking_description']
-     #In case that multiples genres are chosed, the same key appears multiple time, to concat them to string this is needed
-    artist_genres = concat_genre(input)
-    artist_seeking_venue = get_boolean_value_dict(input,'seeking_venue')
-    
-    artist = Artist(name=artist_name, city=artist_city, state=artist_state,
-                    phone=artist_phone, genres=artist_genres, image_link=artist_image_link,
-                    facebook_link=artist_facebook_link, website=artist_website, seeking_venue=artist_seeking_venue, seeking_description=artist_seeking_description)
+    form = ArtistForm(request.form)
+    artist = Artist(
+      name=form.name.data,
+      city=form.city.data,
+      state=form.state.data,
+      phone=form.phone.data,
+      image_link=form.image_link.data,
+      facebook_link=form.facebook_link.data,
+      website=form.website_link.data,
+      seeking_description=form.seeking_description.data,
+      #In case that there are multiple genres, it is a list and needs to be concated
+      genres = concat_genres(form.genres.data),
+      seeking_venue = form.seeking_venue.data
+    )
     session.add(artist)
     #commit the session in the DB
     session.commit() 
@@ -479,12 +462,12 @@ def create_show_submission():
   # [x] TODO: insert form data as a new Show record in the db, instead
   error = False
   try:
-    show_start_time=datetime.strptime(request.form.get("start_time"),"%Y-%m-%d %H:%M:%S")
-    show_artist_id=request.form.get("artist_id")
-    show_venue_id=request.form.get("venue_id")
-    print("creating show")
-    show = Show(start_time=show_start_time, artist_id=show_artist_id, venue_id=show_venue_id)
-    print("show created")
+    form = ShowForm(request.form)
+    show = Show(
+      start_time=form.start_time.data,
+      artist_id=form.artist_id.data,
+      venue_id=form.venue_id.data
+    )
     #add the todo item into the session
     session.add(show)
     #commit the session in the DB
