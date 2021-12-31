@@ -83,6 +83,21 @@ One note before you delve into your tasks: for each endpoint, you are expected t
 
 ## API Documentation
 
+### Error Handling
+Errors are returned as JSON objects in the following format:
+```
+{
+    "success": False, 
+    "error": 400,
+    "message": "bad request"
+}
+```
+The API will return three error types when requests fail:
+- 400: Bad Request
+- 404: Resource Not Found
+- 422: Not Processable 
+
+
 ### GET /questions
 - General:
     - Returns a list of questions objects, success value, and total number of questions and current category (set to None because no category is selected yet)
@@ -437,7 +452,7 @@ One note before you delve into your tasks: for each endpoint, you are expected t
   },
   "success": true
 }
-
+```
 ## Deployment N/A
 
 ```
