@@ -102,9 +102,6 @@ def create_app(test_config=None):
         try:
             question = Question.query.filter(Question.id == question_id).one_or_none()
 
-            if question is None:
-                abort(404)
-
             question.delete()
 
             return jsonify({
@@ -113,7 +110,7 @@ def create_app(test_config=None):
 
         except:
             abort(422)
-            
+
     '''
     [x]TODO: 
     Create an endpoint to POST a new question, 
@@ -179,19 +176,23 @@ def create_app(test_config=None):
     '''
     @app.route('/categories/<int:category_id>/questions', methods=['GET'])
     def get_questions_category(category_id):
-        questions = Question.query.filter(Question.category == category_id).order_by(Question.id).all()
-        questions_formatted = [question.format() for question in questions]
-        current_category = Category.query.get(category_id).format()
-        
-        if len(questions) == 0:
-            abort(404)
+        try:
+            questions = Question.query.filter(Question.category == category_id).order_by(Question.id).all()
+            questions_formatted = [question.format() for question in questions]
+            current_category = Category.query.get(category_id).format()
+            
+            if len(questions) == 0:
+                abort(404)
 
-        return jsonify({
-          'success': True,
-          'questions': questions_formatted,
-          'total_questions': len(questions_formatted),
-          'current_category': current_category
-        })
+            return jsonify({
+                'success': True,
+                'questions': questions_formatted,
+                'total_questions': len(questions_formatted),
+                'current_category': current_category
+            })
+        
+        except:
+            abort(422)
 
     '''
     [x]TODO: 
@@ -216,7 +217,7 @@ def create_app(test_config=None):
             questions = Question.query.filter(and_(Question.category == category_id, Question.id.notin_(previous_questions))).order_by(Question.id).first().format()
         else:
             questions = None
-        
+
         return jsonify({
             'success': True,
             'question': questions

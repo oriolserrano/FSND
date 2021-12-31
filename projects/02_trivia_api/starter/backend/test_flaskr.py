@@ -95,7 +95,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
         self.assertTrue(data["total_questions"])
-        self.assertEqual(len(data["questions"]), 2)
+        self.assertTrue(data["questions"])
         # in the main page the current_category has the value none, so we check if the key exists
         self.assertTrue("current_category" in data.keys())
 
@@ -121,6 +121,40 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
         self.assertEqual(data["question"], None) 
+
+    def test_422_for_failed_delete(self):
+        res = self.client().delete("/questions/99999")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "unprocessable")
+        
+    def test_404_if_category_does_not_exist(self):
+        res = self.client().get("/categories/1000")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "resource not found")
+        
+    def test_422_id_delete_question_not_exist(self):
+        res = self.client().delete("/questions/999999")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "unprocessable")
+    
+    def test_422_category_does_not_have_questions(self):
+        res = self.client().get("/categories/1000/questions")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "unprocessable")
+
+
 
 
 # Make the tests conveniently executable
