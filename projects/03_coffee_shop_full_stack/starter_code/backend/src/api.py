@@ -10,15 +10,14 @@ from .auth.auth import AuthError, requires_auth
 app = Flask(__name__)
 setup_db(app)
 CORS(app)
-#Token1
-#eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IklOdm5oZjZHSDNpc0dRc1JYTUdkaCJ9.eyJpc3MiOiJodHRwczovL2Rldi1qdDNob2gxYi51cy5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NjFlYjFiM2JhM2NmMjUwMDY4YjhhYWNlIiwiYXVkIjoiY29mZWVzaG9wIiwiaWF0IjoxNjQyNzk3ODg3LCJleHAiOjE2NDI4MDUwODcsImF6cCI6IkNtRERTamt1YlA3VlV3R3JuMmJ5ZGM1RjVkNXNXTjUyIiwic2NvcGUiOiIifQ.6g39QeoZt1esnlVvNHOLV5FpaLlz2Ed_9twh9IXAqRc6PY1G7-SkMZ2wWidyaGJJmTwx232ssi6bwOAmJyFmKm8W2wRvaaHED_J9LYao5oBL2ie3r_ZCVmYnvFn14YU390R_KNUnP4f3xnKSMc0g9Rlz5ONc6BGyruRKxQkkRYMRzlSOrACZGGZ78-uqV1lYCva9ovuWULWdLIMa6_phXcwcAoNs0qudNxlWb0ZS9zCSUnukWBAh6GU7LP8XyEwP3zYjV2RAKqU0oY1myK8PBrBik9VC3mpztDbr4um4GnWD44O07i2gYimFYrK8KwK8IcMgMJcqn_ntgFiT2z44Vw
+
 '''
 @TODO uncomment the following line to initialize the datbase
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this function will add one
 '''
-#db_drop_and_create_all()
+db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -36,7 +35,7 @@ def get_drinks():
         drinks = [drink.short() for drink in Drink.query.order_by(Drink.id).all()]
         
         if len(drinks) == 0:
-            abort(400)
+            abort(404)
         
         return jsonify({
             'success': True,
@@ -63,7 +62,7 @@ def get_drink_deail(payload):
         drinks = [drink.long() for drink in Drink.query.order_by(Drink.id).all()]
 
         if len(drinks) == 0:
-            abort(400)
+            abort(404)
  
         return jsonify({
             'success': True,
@@ -88,12 +87,18 @@ def get_drink_deail(payload):
 def create_drink(payload):
     try:
         data = request.get_json()
-        #new_recipe is a python object, so we have to use json.dumps to parse it to a JSON string
-        new_recipe = json.dumps(data['recipe'])
-        new_title = data['title']
         
-        new_drink = Drink(recipe=new_recipe, title=new_title)
-
+        #new_recipe is a python object, so we have to use json.dumps to parse it to a JSON string
+        new_recipe = data.get('recipe', None)
+        new_title = data.get('title', None)
+        
+        if new_recipe is not None:
+            new_recipe_casted = json.dumps(new_recipe)
+        else:
+            new_recipe_casted = new_recipe
+        
+        new_drink = Drink(recipe=new_recipe_casted, title=new_title)
+        
         new_drink.insert()
         
         return jsonify({
@@ -119,20 +124,23 @@ def create_drink(payload):
 @requires_auth('patch:drinks')
 def update_drink(payload, id):
     try:
+        print("patching")
         data = request.get_json()
-        new_recipe = json.dumps(data['recipe'])
-        new_title = data['title']
+        new_recipe = data.get('recipe', None)
+        new_title = data.get('title', None)
         print(data)
         print(id)
         drink = Drink.query.filter(Drink.id == id).one_or_none()
         print(drink.id)
-        drink.recipe = new_recipe
-        drink.title = new_title
+        if new_recipe is not None:
+            drink.recipe = json.dumps(new_recipe)
+        if new_title is not None:
+            drink.title = new_title
         drink.update()
         
         return jsonify({
             'success': True,
-            'drinks': drink.long()
+            'drinks': [drink.long()]
         })
     except:
         abort(422)
@@ -168,7 +176,6 @@ def delete_drink(payload, id):
 Example error handling for unprocessable entity
 '''
 
-
 @app.errorhandler(422)
 def unprocessable(error):
     return jsonify({
@@ -193,12 +200,25 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above
 '''
-
+@app.errorhandler(404)
+def unprocessable(error):
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "resource not found"
+    }), 404
 
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+@app.errorhandler(AuthError)
+def authentification_error(AuthError):
+    return jsonify({
+        "success": False,
+        "error": AuthError.status_code,
+        "message": AuthError.error
+                    }), AuthError.status_code
 
 if __name__ == "__main__":
     app.debug = True
