@@ -58,6 +58,11 @@ class Drink(db.Model):
     # the required datatype is [{'color': string, 'name':string, 'parts':number}]
     recipe = Column(String(180), nullable=False)
 
+    def __init__(self, title, recipe):
+        self.title = title
+        self.recipe = recipe
+       
+
     '''
     short()
         short form representation of the Drink model
@@ -122,6 +127,7 @@ class Drink(db.Model):
     '''
 
     def update(self):
+        print("update")
         db.session.commit()
 
     def __repr__(self):
