@@ -19,6 +19,7 @@ export class DrinkMenuPage implements OnInit {
     ) { }
 
   ngOnInit() {
+    console.log("onInit, getDrink")
     this.drinks.getDrinks();
   }
 
